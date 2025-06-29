@@ -1,0 +1,529 @@
+<NAME>
+WebHook直连策略-bitget-v1.0
+</NAME>
+<DESCRIPTION>
+相关文章：https://www.fmz.com/bbs-topic/5969
+
+由于HTTPServer本身有些坑，考虑使用ThreadingHTTPServer代替。
+参考：https://docs.python.org/3.7/library/http.server.html
+需要Python3.7版本。
+
+HTTPServer问题的资料：
+https://www.zybuluo.com/JunQiu/note/1350528
+</DESCRIPTION>
+<PARAM>
+["Port","\b服务的监听端口号","\b服务的监听端口号",1111,{"required":true,"default":1111,"type":"number"}]
+["code","合约ID","","$$$__list__$$$永续||当周||次周||季度||次季",{"options":[{"name":"永续","value":0},{"name":"当周","value":1},{"name":"次周","value":2},{"name":"季度","value":3},{"name":"次季","value":4}],"default":0,"type":"selected"}]
+["trade_type","交易类型","",0,{"required":false,"default":0,"type":"number"}]
+["num","杠杆大小","",10,{"required":true,"default":10,"type":"number"}]
+["order_amount","下单量","",10,{"required":true,"default":10,"type":"number"}]
+["stop_per","止损比例","",0.1,{"required":true,"default":0.1,"type":"number"}]
+["gain_per","止盈比例","",10000,{"required":true,"default":10000,"type":"number"}]
+</PARAM>
+<CODE>
+'''backtest
+start: 2020-12-03 00:00:00
+end: 2021-03-02 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_CTP","currency":"FUTURES"}]
+args: [["AccessKey","q24q23525"],["SecretKey","werqtr"],["ContractType","q戊二醛万人骑r"]]
+'''
+
+'''
+请求格式：http://x.x.x.x:xxxx/data?access_key=xxx&secret_key=yyy&type=buy&amount=0.001
+策略机器人参数：
+- 类型：加密字符串，AccessKey , SecretKey ，可以用FMZ平台的低权限的API KEY，或者自己生成KEY也可以。
+- 类型：字符串，合约ID，ContractType
+- 类型：数值，端口号，Port
+'''
+
+'''
+请求格式：http://x.x.x.x:xxxx/data?access_key=xxx&secret_key=yyy&type=buy&amount=0.001
+策略机器人参数：
+- 类型：加密字符串，AccessKey , SecretKey ，可以用FMZ平台的低权限的API KEY，或者自己生成KEY也可以。
+- 类型：字符串，合约ID，ContractType
+- 类型：数值，端口号，Port
+'''
+
+import _thread
+import json
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+from urllib.parse import parse_qs, urlparse
+from threading import Lock
+
+
+
+
+def url2Dict(url):
+    query = urlparse(url).query
+    params = parse_qs(query)  
+    result = {key: params[key][0] for key in params}  
+    return result
+
+class Executor(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+
+        try:
+
+            dictParam = url2Dict(self.path)
+            Log("测试", dictParam)
+
+        except Exception as e:
+
+            Log("Provider do_GET error, e:", e)
+
+    def do_POST(self):
+
+        global init_dict,trade_dict,lock
+
+        try:
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            req_datas = self.rfile.read(int(self.headers['content-length'])).decode()
+            dictParam = url2Dict(self.path)
+            Log("接收到请求", "参数：", dictParam, "#FF0000")
+            Log("接收到数据", req_datas)
+            self.wfile.write(json.dumps({"state": "ok"}).encode())
+            # 校验
+
+            req_datas = json.loads(req_datas)
+
+            if "symbol" in req_datas and "direction" in req_datas:
+
+                Log("接收到品种", req_datas["symbol"])
+                Log("接收到方向", req_datas["direction"])
+
+                Sleep(200)
+
+                symbol_code = req_datas["symbol"]
+                tag = req_datas["direction"]
+
+                order_symbol = symbol_code +"-USDT-SWAP"
+
+                if order_symbol not in init_dict:
+
+                    Log("当前币种交易所无法交易")
+
+                    return
+
+                with lock:
+
+                    exchanges[1].SetCurrency(symbol_code + "_USDT")
+
+                    if symbol_code not in trade_dict:
+
+                        dict1 = {
+
+                            "tag": tag
+                        }
+
+                    
+
+                        if tag == "buy" and trade_type != 2:
+
+                            ticker = _C(exchanges[1].GetTicker)
+
+                            order_symbol = symbol_code +"-USDT-SWAP"
+
+                            amount = int(1.0 * order_amount/ticker["Last"]/init_dict[order_symbol]["ctVal"]/init_dict[order_symbol]["lotSz"])*init_dict[order_symbol]["lotSz"]
+
+                            if amount < 1e-10:
+
+                                Log(order_symbol,"下单金额达不到最低下单量")
+                            
+                                return
+
+                            Log(order_symbol, "多仓仓位开仓")
+
+                            exchanges[1].SetMarginLevel(num)
+                            exchanges[1].SetDirection("buy")
+                            exchanges[1].Buy(-1,amount)
+
+                            trade_dict[symbol_code] = dict1
+
+
+                        if tag == "sell" and trade_type != 1:
+
+                            ticker = _C(exchanges[1].GetTicker)
+
+                            order_symbol = symbol_code +"-USDT-SWAP"
+
+                            amount = int(1.0 * order_amount/ticker["Last"]/init_dict[order_symbol]["ctVal"]/init_dict[order_symbol]["lotSz"])*init_dict[order_symbol]["lotSz"]
+
+                            if amount < 1e-10:
+
+                                Log(order_symbol,"下单金额达不到最低下单量")
+                                return      
+
+                            Log(order_symbol, "空仓仓位开仓")
+
+                            exchanges[1].SetMarginLevel(num)
+                            exchanges[1].SetDirection("sell")
+                            exchanges[1].Sell(-1,amount)
+
+                            trade_dict[symbol_code] = dict1
+
+
+
+                    else:
+
+
+                        if trade_dict[symbol_code]["tag"] == "buy":
+
+                            if tag == "buy":
+
+                                position = _C(exchanges[1].GetPosition)
+
+                                for pos in position:
+
+                                    if pos["Type"] == PD_LONG:
+
+                                        if pos["Profit"] > 0:
+
+                                            ticker = _C(exchanges[1].GetTicker)
+
+                                            order_symbol = symbol_code + "-USDT-SWAP"
+
+                                            amount = int(1.0 * order_amount/ticker["Last"]/init_dict[order_symbol]["ctVal"]/init_dict[order_symbol]["lotSz"])*init_dict[order_symbol]["lotSz"]
+
+                                            if amount < 1e-10:
+
+                                                Log(order_symbol,"下单金额达不到最低下单量")
+
+                                                return   
+
+                                            Log(order_symbol, "多仓仓位加仓")
+
+                                            exchanges[1].SetMarginLevel(num)
+                                            exchanges[1].SetDirection("buy")
+                                            exchanges[1].Buy(-1,amount)
+
+                                            break
+
+
+                            if tag == "sell":
+
+                                position = _C(exchanges[1].GetPosition)
+
+                                for pos in position:
+
+                                    Log(pos)
+
+                                    if pos["Type"] == PD_LONG:
+
+                                        exchanges[1].SetDirection("closebuy")
+
+                                        exchanges[1].Sell(-1, pos["Amount"])
+
+                                if trade_type != 1:
+
+                                    ticker = _C(exchanges[1].GetTicker)
+
+                                    order_symbol = symbol_code + "-USDT-SWAP"
+                                
+                                    amount = int(1.0 * order_amount/ticker["Last"]/init_dict[order_symbol]["ctVal"]/init_dict[order_symbol]["lotSz"])*init_dict[order_symbol]["lotSz"]
+
+                                    if amount < 1e-10:
+
+                                        Log(order_symbol,"下单金额达不到最低下单量")
+
+                                        trade_dict[symbol_code]["tag"] = "empty"
+                                                
+                                        return 
+                                
+                                    Log(order_symbol, "空仓仓位开仓")
+
+                                    exchanges[1].SetMarginLevel(num)
+                                    exchanges[1].SetDirection("sell")
+                                    exchanges[1].Sell(-1,amount)
+
+                                else:
+
+                                    trade_dict[symbol_code]["tag"] = "empty"
+
+                                    return
+
+
+                        elif trade_dict[symbol_code]["tag"] == "sell":
+
+                            if tag == "sell":
+
+                                position = _C(exchanges[1].GetPosition)
+
+                                for pos in position:
+
+                                    if pos["Type"] == PD_SHORT:
+
+                                        if pos["Profit"] > 0:
+
+                                            ticker = _C(exchanges[1].GetTicker)
+
+                                            order_symbol = symbol_code + "-USDT-SWAP"
+
+                                            amount = int(1.0 * order_amount/ticker["Last"]/init_dict[order_symbol]["ctVal"]/init_dict[order_symbol]["lotSz"])*init_dict[order_symbol]["lotSz"]
+
+                                            
+                                            if amount < 1e-10:
+
+                                                Log(order_symbol,"下单金额达不到最低下单量")
+                                                
+                                                return 
+
+
+                                            Log(order_symbol, "空仓仓位加仓")
+
+                                            exchanges[1].SetMarginLevel(num)
+                                            exchanges[1].SetDirection("sell")
+                                            exchanges[1].Sell(-1,amount)
+
+                                            break
+
+
+                            if tag == "buy":
+
+                                position = _C(exchanges[1].GetPosition)
+
+                                for pos in position:
+
+                                    if pos["Type"] == PD_SHORT:
+
+                                        exchanges[1].SetDirection("closesell")
+
+                                        exchanges[1].Buy(-1, pos["Amount"])
+
+
+
+                                if trade_type != 2:
+
+
+                                    ticker = _C(exchanges[1].GetTicker)
+
+                                    order_symbol = symbol_code +"-USDT-SWAP"
+
+                                    amount = int(1.0 * order_amount/ticker["Last"]/init_dict[order_symbol]["ctVal"]/init_dict[order_symbol]["lotSz"])*init_dict[order_symbol]["lotSz"]
+
+
+                                    if amount < 1e-10:
+
+                                        Log(order_symbol,"下单金额达不到最低下单量")
+
+                                        trade_dict[symbol_code]["tag"] = "empty"
+                                                
+                                        return 
+
+                                    Log(order_symbol, "多仓仓位开仓")
+
+                                    exchanges[1].SetMarginLevel(num)
+                                    exchanges[1].SetDirection("buy")
+                                    exchanges[1].Buy(-1,amount)
+
+                                else:
+
+                                    trade_dict[symbol_code]["tag"] = "empty"
+
+                                    return
+
+
+                        elif trade_dict[symbol_code]["tag"] == "empty":
+
+
+                            if tag == "buy" and trade_type != 2:
+
+                                ticker = _C(exchanges[1].GetTicker)
+
+                                order_symbol = symbol_code +"-USDT-SWAP"
+
+                                amount = int(1.0 * order_amount/ticker["Last"]/init_dict[order_symbol]["ctVal"]/init_dict[order_symbol]["lotSz"])*init_dict[order_symbol]["lotSz"]
+
+                                if amount < 1e-10:
+
+                                    Log(order_symbol,"下单金额达不到最低下单量")
+
+                                    trade_dict[symbol_code]["tag"] = "empty"
+                                                
+                                    return 
+
+                                Log(order_symbol, "多仓仓位开仓")
+
+                                exchanges[1].SetMarginLevel(num)
+                                exchanges[1].SetDirection("buy")
+                                exchanges[1].Buy(-1,amount)
+
+
+                            elif tag == "sell" and trade_type != 1:
+
+                                ticker = _C(exchanges[1].GetTicker)
+
+                                order_symbol = symbol_code +"-USDT-SWAP"
+
+                                amount = int(1.0 * order_amount/ticker["Last"]/init_dict[order_symbol]["ctVal"]/init_dict[order_symbol]["lotSz"])*init_dict[order_symbol]["lotSz"]
+
+                                if amount < 1e-10:
+
+                                    Log(order_symbol,"下单金额达不到最低下单量")
+
+                                    trade_dict[symbol_code]["tag"] = "empty"
+                                                
+                                    return 
+
+                                Log(order_symbol, "空仓仓位开仓")
+
+                                exchanges[1].SetMarginLevel(num)
+                                exchanges[1].SetDirection("sell")
+                                exchanges[1].Sell(-1,amount)
+
+                            else:
+
+                                return
+
+                        trade_dict[symbol_code]["tag"] = tag
+
+       
+                
+            # 写入数据应答
+            
+        except Exception as e:
+            Log("Provider do_POST error, e:", e)
+
+
+def createServer(host):
+    try:
+        server = ThreadingHTTPServer(host, Executor)
+        Log("Starting server, listen at: %s:%s" % host)
+        server.serve_forever()
+    except Exception as e:
+        Log("createServer error, e:", e)
+        raise Exception("stop")
+
+def main():
+    
+    global init_dict,trade_dict,lock
+
+    lock = Lock()
+
+    init_dict = {}
+
+    trade_dict = {}
+
+    while True:
+
+        try:
+            
+            symbol_info1 = exchange.IO("api", "GET", "/api/v5/public/instruments","instType=SWAP")
+            symbols_info = symbol_info1["data"]
+            break
+
+        except Exception as e:
+            Sleep(1000)
+            Log(e)
+        else:
+            break
+
+
+    for symbols1 in symbols_info:
+
+        if symbols1["instType"] == "SWAP":
+
+            dict2 = {
+                "minSz":float(symbols1["minSz"]),
+                "lotSz":float(symbols1["lotSz"]),
+                "ctVal":float(symbols1["ctVal"])
+            }
+         
+            init_dict[symbols1["instId"]] = dict2
+
+    # 开启一个线程
+    code_list = ["swap","this_week","next_week","quarter","next_quarter"]
+    exchange.SetContractType("swap")
+    exchanges[1].SetContractType("swap")
+
+
+    #exchange.IO("cross", True)
+    try:
+        _thread.start_new_thread(createServer, (("0.0.0.0", Port), ))         # VPS服务器上测试        
+    except Exception as e:        
+        Log("错误信息：", e)
+        raise Exception("stop")
+    
+    Log("账户资产信息：", _C(exchange.GetAccount))
+
+        
+    while True:
+
+        Sleep(300)
+
+        with lock:
+
+            for trade_class in trade_dict:
+
+                Sleep(200)
+
+                dict3 = trade_dict[trade_class]
+
+                if dict3["tag"] == "buy":
+
+                    exchange.SetCurrency(trade_class + "_USDT")
+
+                    exchange_symbol = exchange
+
+                    position = _C(exchange_symbol.GetPosition)
+
+                    for pos in position:
+
+                        if pos["Type"] == PD_LONG:
+
+                            if 1.0 * pos["Profit"]/order_amount <= -1.0 * stop_per:
+
+                                Log(trade_class, "多仓仓位止损")
+
+                                exchange_symbol.SetDirection("closebuy")
+                                exchange_symbol.Sell(-1,pos["Amount"])
+                                trade_dict[trade_class]["tag"] = "empty"
+
+
+                            if 1.0 * pos["Profit"]/order_amount >= 1.0 * gain_per:
+
+                                Log(trade_class, "多仓仓位止盈")
+
+                                exchange_symbol.SetDirection("closebuy")
+                                exchange_symbol.Sell(-1,pos["Amount"])
+                                trade_dict[trade_class]["tag"] = "empty"
+
+                if dict3["tag"] == "sell":
+
+                    exchange.SetCurrency(trade_class + "_USDT")
+
+                    exchange_symbol = exchange
+
+                    position = _C(exchange_symbol.GetPosition)
+
+                    for pos in position:
+
+                        if pos["Type"] == PD_SHORT:
+
+                            if 1.0 * pos["Profit"]/order_amount <= -1.0 * stop_per:
+
+                                Log(trade_class, "空仓仓位止损")
+                                exchange_symbol.SetDirection("closesell")
+                                exchange_symbol.Buy(-1,pos["Amount"])
+                                trade_dict[trade_class]["tag"] = "empty"
+
+                            if 1.0 * pos["Profit"]/order_amount >= 1.0 * gain_per:
+
+                                Log(trade_class, "空仓仓位止盈")
+                                exchange_symbol.SetDirection("closesell")
+                                exchange_symbol.Buy(-1,pos["Amount"])
+                                trade_dict[trade_class]["tag"] = "empty"
+</CODE>
+<LANG>
+1
+</LANG>
+<TYPE>
+9
+</TYPE>
+<TIME>
+2025-05-29 17:17:41
+</TIME>
