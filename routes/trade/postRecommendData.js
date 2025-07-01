@@ -31,7 +31,7 @@ export const postRecommendData = async (req, res) => {
             for (const apiItem of apiKeys) {
                 const {userId, apiKey, apiSecret} = apiItem
                 const option = await UserTradeOptionsModel.findOne({userId})
-                await trade({apiKey, apiSecret, userOptions: option, tradeData})
+                await trade({apiKey, apiSecret, userOptions: option, sortedArray})
             }
         }
         return formatResponse(res, 200, 0, {}, 'success')
