@@ -72,7 +72,6 @@ export const trade = async ({
                     } catch (e) {
                         console.log("没有仓位", e)
                     }
-                    await futuresApi.getPosition(settle, `${symbol}_USDT`)
                     if (!position || (position && position.body.size === 0)) {
                         await createOrder(futuresApi, futureContractData, settle, symbol, direction, userOptions)
                     } else if (position && ((position.body.size < 0 && direction === "buy") || (position.body.size > 0 && direction === "sell"))) {
