@@ -3,17 +3,19 @@ import {ApiStoreModel} from "buydip_scheme";
 import {ObjectId} from "mongodb";
 import {getUserApiKey} from "../dataUtils/getUserApiKey";
 import {postRecommendData} from "./trade/postRecommendData";
+import {trade} from "../dataUtils/trade";
 
 export const testAPI = async (req, res) => {
     try {
-        await postRecommendData(req,res)
+        const {apiKey, apiSecret, tradeData, userOptions} = req.body
+        await trade({userOptions, apiKey, apiSecret, tradeData})
         res.status(200).json({status: 'alive'})
     } catch (e) {
         res.status(500).json({error: e.message});
     }
 }
 
-const testCode = async () =>{
+const testCode = async () => {
     const SECRET_KEY = process.env.SECRET_KEY
 
     function encrypt(text) {
