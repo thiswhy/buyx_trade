@@ -32,7 +32,9 @@ export const postRecommendData = async (req, res) => {
                 const {userId, apiKey, apiSecret} = apiItem
                 const option = await UserTradeOptionsModel.findOne({userId, isActive: true}).lean()
                 console.log("option", option)
-                await trade({apiKey, apiSecret, userOptions: option, tradeData: sortedArray})
+                if (!isEmpty(option)) {
+                    await trade({apiKey, apiSecret, userOptions: option, tradeData: sortedArray})
+                }
             }
         }
         return formatResponse(res, 200, 0, {}, 'success')
