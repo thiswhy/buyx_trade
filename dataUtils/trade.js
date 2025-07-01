@@ -31,9 +31,13 @@ export const trade = async ({
         const settle = "usdt"
         const futureContractData = []
         for (const tradeItem of tradeData) {
-            const futureContract = await futuresApi.getFuturesContract(settle, `${tradeItem.symbol}_USDT`)
-            futureContractData.push(futureContract.body)
-            await new Promise(resolve => setTimeout(resolve, 100));
+            try {
+                const futureContract = await futuresApi.getFuturesContract(settle, `${tradeItem.symbol}_USDT`)
+                futureContractData.push(futureContract.body)
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (e) {
+                console.log("获取合约币种出错", e)
+            }
         }
         // 用户需要设置这个最小的保证金余额，否则不允许交易
         if (userOptions.isActive) {
