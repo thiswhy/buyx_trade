@@ -63,14 +63,19 @@ export const trade = async ({
                 }
             }
             for (const item of tradeInfo) {
-                console.log("item", item)
                 try {
                     const {symbol, direction} = item
                     console.log("symbol: ", symbol, "direction: ", direction)
-                    const position = await futuresApi.getPosition(settle, `${symbol}_USDT`)
-                    if (position.body.size === 0) {
+                    let position = null
+                    try {
+                        position = await futuresApi.getPosition(settle, `${symbol}_USDT`)
+                    } catch (e) {
+                        console.log("没有仓位", e)
+                    }
+                    await futuresApi.getPosition(settle, `${symbol}_USDT`)
+                    if (position && position.body.size === 0) {
                         await createOrder(futuresApi, futureContractData, settle, symbol, direction, userOptions)
-                    } else if ((position.body.size < 0 && direction === "buy") || (position.body.size > 0 && direction === "sell")) {
+                    } else if (position && ((position.body.size < 0 && direction === "buy") || (position.body.size > 0 && direction === "sell"))) {
                         // 进行平仓操作
                         await futuresApi.updatePositionLeverage(settle, `${symbol}_USDT`, position.body.leverage, {})
                         await futuresApi.createFuturesOrder(settle, {
@@ -81,7 +86,7 @@ export const trade = async ({
                         }, {})
                         // 进行反手操作
                         await createOrder(futuresApi, futureContractData, settle, symbol, direction, userOptions)
-                    } else if ((position.body.size > 0 && direction === "buy") || (position.body.size < 0 && direction === "sell")) {
+                    } else if (position && ((position.body.size > 0 && direction === "buy") || (position.body.size < 0 && direction === "sell"))) {
                         // 方向一致，如果状态为盈利，则进行加仓操作
                         console.log("position.body.unrealised_pnl", position.body.unrealisedPnl)
                         if (Number(position.body.unrealisedPnl) > 0) {
@@ -125,19 +130,15 @@ const createOrder = async (futuresApi, futureContractData, settle, symbol, direc
                     const price = formatPrice(lossPrice, findFutureContract.orderPriceRound)
                     console.log("price", price)
                     await new Promise(resolve => setTimeout(resolve, 100));
-                    try {
-                        // 创建条件单之前需要判断是否已经存在挂单行为
-                        const priceTriggeredOrder = await futuresApi.listPriceTriggeredOrders(settle, "open", {
-                            contract: `${symbol}_USDT`,
-                        })
+                    // 创建条件单之前需要判断是否已经存在挂单行为
+                    const priceTriggeredOrder = await futuresApi.listPriceTriggeredOrders(settle, "open", {
+                        contract: `${symbol}_USDT`,
+                    })
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    if (priceTriggeredOrder.body.length > 0) {
+                        console.log("fuch the shit")
+                        await futuresApi.cancelPriceTriggeredOrderList(settle, {contract: `${symbol}_USDT`})
                         await new Promise(resolve => setTimeout(resolve, 100));
-                        if (priceTriggeredOrder.body.length > 0) {
-                            console.log("fuch the shit")
-                            await futuresApi.cancelPriceTriggeredOrderList(settle, {contract: `${symbol}_USDT`})
-                            await new Promise(resolve => setTimeout(resolve, 100));
-                        }
-                    } catch (e) {
-                        console.log("获取当前仓位出错")
                     }
                     await new Promise(resolve => setTimeout(resolve, 100));
                     await futuresApi.createPriceTriggeredOrder(settle, {
