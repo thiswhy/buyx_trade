@@ -39,6 +39,7 @@ export const trade = async ({
                 //  console.log("获取合约币种出错", e)
             }
         }
+        console.log("futureContractData",futureContractData)
         // 用户需要设置这个最小的保证金余额，否则不允许交易
         if (userOptions.isActive) {
             let tradeInfo = tradeData
@@ -60,10 +61,7 @@ export const trade = async ({
                 }
             }
             if (inDualMode) {
-                return {
-                    code: -1,
-                    message: "持仓方向应该为单向持仓",
-                }
+                console.log("持仓方向应该为单向持仓")
             }
             for (const item of tradeData) {
                 try {
