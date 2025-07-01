@@ -30,7 +30,8 @@ export const postRecommendData = async (req, res) => {
             const apiKeys = await getUserApiKey()
             for (const apiItem of apiKeys) {
                 const {userId, apiKey, apiSecret} = apiItem
-                const option = await UserTradeOptionsModel.findOne({userId})
+                const option = await UserTradeOptionsModel.findOne({userId}).lean()
+                console.log("option", option)
                 await trade({apiKey, apiSecret, userOptions: option, tradeData: sortedArray})
             }
         }
