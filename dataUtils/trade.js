@@ -63,7 +63,7 @@ export const trade = async ({
                 }
             }
             for (const item of tradeInfo) {
-                console.log("item",item)
+                console.log("item", item)
                 try {
                     const {symbol, direction} = item
                     console.log("symbol: ", symbol, "direction: ", direction)
@@ -102,82 +102,87 @@ export const trade = async ({
 
 // 下单
 const createOrder = async (futuresApi, futureContractData, settle, symbol, direction, userOptions) => {
-    const futureAccount = await futuresApi.listFuturesAccounts(settle)
-    const canTrade = (Number(futureAccount.body.total) - Number(userOptions.insurance)) > (Number(userOptions.maxVolume) / Number(userOptions.leverage))
-    if (canTrade) {
-        const findFutureContract = futureContractData.find(item => item.name === `${symbol}_USDT`)
-        if (!isEmpty(findFutureContract)) {
-            const size = Math.floor(Number(userOptions.maxVolume) / (Number(findFutureContract.quantoMultiplier) * Number(findFutureContract.markPrice)) * Number(userOptions.leverage))
-            if (size > 0) {
-                console.log("size", size)
-                // 用户下单，拿到用户的止盈止损设置
-                // 首先先开仓下单
-                // 设置用户的杠杆倍数
-                await futuresApi.updatePositionLeverage(settle, `${symbol}_USDT`, `${Math.min(userOptions.leverage, findFutureContract.leverageMax)}`, {})
-                const createFuturesOrder = await futuresApi.createFuturesOrder(settle, {
-                    contract: `${symbol}_USDT`,
-                    size: direction === "buy" ? size : -size,
-                    price: 0,
-                    tif: "ioc",
-                }, {})
-                const lossPrice = direction === "buy" ? `${(1 - Number(userOptions.stopLoss)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 + Number(userOptions.stopLoss)) * Number(createFuturesOrder.body.fillPrice)}`
-                const price = formatPrice(lossPrice, findFutureContract.orderPriceRound)
-                console.log("price", price)
-                await new Promise(resolve => setTimeout(resolve, 100));
-                await futuresApi.createPriceTriggeredOrder(settle, {
-                    initial: {
+    try {
+        const futureAccount = await futuresApi.listFuturesAccounts(settle)
+        const canTrade = (Number(futureAccount.body.total) - Number(userOptions.insurance)) > (Number(userOptions.maxVolume) / Number(userOptions.leverage))
+        if (canTrade) {
+            const findFutureContract = futureContractData.find(item => item.name === `${symbol}_USDT`)
+            if (!isEmpty(findFutureContract)) {
+                const size = Math.floor(Number(userOptions.maxVolume) / (Number(findFutureContract.quantoMultiplier) * Number(findFutureContract.markPrice)) * Number(userOptions.leverage))
+                if (size > 0) {
+                    // 用户下单，拿到用户的止盈止损设置
+                    // 首先先开仓下单
+                    // 设置用户的杠杆倍数
+                    await futuresApi.updatePositionLeverage(settle, `${symbol}_USDT`, `${Math.min(userOptions.leverage, findFutureContract.leverageMax)}`, {})
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    const createFuturesOrder = await futuresApi.createFuturesOrder(settle, {
                         contract: `${symbol}_USDT`,
-                        size: 0,// 平仓
-                        price: "0",// 止损
-                        reduceOnly: true,
-                        close: true,
+                        size: direction === "buy" ? size : -size,
+                        price: 0,
                         tif: "ioc",
-                    },
-                    trigger: {
-                        strategyType: 0,
-                        priceType: 0,
-                        price: price,
-                        rule: direction === "buy" ? 2 : 1
-                    },
-                    orderType: direction === "buy" ? "close-long-position" : "close-short-position",
-                })
-                if (userOptions.takeProfit) {
-                    const profitPrice = direction === "buy" ? `${(1 + Number(userOptions.takeProfit)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 - Number(userOptions.takeProfit)) * Number(createFuturesOrder.body.fillPrice)}`
-                    const price = formatPrice(profitPrice, findFutureContract.orderPriceRound)
-                    console.log("profitPrice", price)
+                    }, {})
+                    const lossPrice = direction === "buy" ? `${(1 - Number(userOptions.stopLoss)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 + Number(userOptions.stopLoss)) * Number(createFuturesOrder.body.fillPrice)}`
+                    const price = formatPrice(lossPrice, findFutureContract.orderPriceRound)
+                    console.log("price", price)
+                    await new Promise(resolve => setTimeout(resolve, 100));
                     await futuresApi.createPriceTriggeredOrder(settle, {
                         initial: {
                             contract: `${symbol}_USDT`,
                             size: 0,// 平仓
-                            price: "0",// 止盈
+                            price: "0",// 止损
                             reduceOnly: true,
-                            tif: "ioc",
                             close: true,
+                            tif: "ioc",
                         },
                         trigger: {
                             strategyType: 0,
                             priceType: 0,
                             price: price,
-                            rule: direction === "buy" ? 1 : 2
+                            rule: direction === "buy" ? 2 : 1
                         },
                         orderType: direction === "buy" ? "close-long-position" : "close-short-position",
                     })
+                    if (userOptions.takeProfit) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        const profitPrice = direction === "buy" ? `${(1 + Number(userOptions.takeProfit)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 - Number(userOptions.takeProfit)) * Number(createFuturesOrder.body.fillPrice)}`
+                        const price = formatPrice(profitPrice, findFutureContract.orderPriceRound)
+                        console.log("profitPrice", price)
+                        await futuresApi.createPriceTriggeredOrder(settle, {
+                            initial: {
+                                contract: `${symbol}_USDT`,
+                                size: 0,// 平仓
+                                price: "0",// 止盈
+                                reduceOnly: true,
+                                tif: "ioc",
+                                close: true,
+                            },
+                            trigger: {
+                                strategyType: 0,
+                                priceType: 0,
+                                price: price,
+                                rule: direction === "buy" ? 1 : 2
+                            },
+                            orderType: direction === "buy" ? "close-long-position" : "close-short-position",
+                        })
+                    }
                 }
-            }
-            return {
-                code: 0,
-                message: "成功"
+                return {
+                    code: 0,
+                    message: "成功"
+                }
+            } else {
+                return {
+                    code: -1,
+                    message: "合约币种不存在"
+                }
             }
         } else {
             return {
                 code: -1,
-                message: "合约币种不存在"
+                message: "保证金不足"
             }
         }
-    } else {
-        return {
-            code: -1,
-            message: "保证金不足"
-        }
+    } catch (e) {
+        console.log("下单出错", e)
     }
 }
