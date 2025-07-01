@@ -1,8 +1,6 @@
 import CryptoJS from "crypto-js";
 import {ApiStoreModel} from "buydip_scheme";
 import {ObjectId} from "mongodb";
-import {getUserApiKey} from "../dataUtils/getUserApiKey";
-import {postRecommendData} from "./trade/postRecommendData";
 import {trade} from "../dataUtils/trade";
 
 export const testAPI = async (req, res) => {

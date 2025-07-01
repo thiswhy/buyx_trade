@@ -125,6 +125,17 @@ const createOrder = async (futuresApi, futureContractData, settle, symbol, direc
                     const price = formatPrice(lossPrice, findFutureContract.orderPriceRound)
                     console.log("price", price)
                     await new Promise(resolve => setTimeout(resolve, 100));
+                    // 创建条件单之前需要判断是否已经存在挂单行为
+                    const priceTriggeredOrder = await futuresApi.listPriceTriggeredOrders(settle, "open", {
+                        contract: `${symbol}_USDT`,
+                    })
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    if(priceTriggeredOrder.body.length > 0){
+                        console.log("fuch the shit")
+                        await futuresApi.cancelPriceTriggeredOrderList(settle, {contract: `${symbol}_USDT`})
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 100));
                     await futuresApi.createPriceTriggeredOrder(settle, {
                         initial: {
                             contract: `${symbol}_USDT`,
