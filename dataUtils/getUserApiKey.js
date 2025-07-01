@@ -10,7 +10,7 @@ const decrypt = (text) => {
 }
 
 export const getUserApiKey = async () => {
-    const apiInfo = await ApiStoreModel.find({isActive: true}).lean();
+    const apiInfo = await ApiStoreModel.find({isActive: true});
     let apiKeys = [];
     for (const item of apiInfo) {
         const {apiKey, apiSecret, userId} = item;
