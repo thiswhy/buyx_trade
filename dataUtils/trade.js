@@ -2,19 +2,9 @@ import {intersectionWith, isEmpty} from "lodash";
 import {formatPrice} from "./formatPrice";
 
 const GateApi = require('gate-api');
-
+const TRADE_API_URL = process.env.TRADE_API_URL
 let client = new GateApi.ApiClient();
-const defaultUserOptions = {
-    currency: [], // 交易币种，当为空值默认全部交易币种
-    insurance: "100", // 保证金余额
-    leverage: "10", // 杠杆倍数 默认1
-    maxVolume: "20", // 单笔交易最大金额 默认 20usdt
-    takeProfit: "0.1", // 默认不止盈
-    stopLoss: "1", // 止损10% 20% 30% 选择其中一个
-    direction: '', // 交易方向 默认空,空代表多空都做 || buy || sell
-    isActive: true,
-}
-// {apiKey, apiSecret}
+
 export const trade = async ({
                                 apiKey,
                                 apiSecret,
@@ -23,8 +13,7 @@ export const trade = async ({
                             }) => {
     try {
         client.setApiKeySecret(apiKey, apiSecret);
-        // client.basePath = 'https://api.gateio.ws/api/v4'
-        client.basePath = 'https://api-testnet.gateapi.io/api/v4'
+        client.basePath = TRADE_API_URL
         const futuresApi = new GateApi.FuturesApi(client);
         const settle = "usdt"
         const futureContractData = []
