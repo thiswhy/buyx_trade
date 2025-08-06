@@ -10,6 +10,7 @@ export const testAPI = async (req, res) => {
         const {apiKey, apiSecret, tradeData, userOptions} = req.body
         // await trade({userOptions, apiKey, apiSecret, tradeData})
        // return await postRecommendData(req, res)
+        testCode()
     } catch (e) {
         res.status(500).json({error: e.message});
     }
@@ -26,8 +27,10 @@ const testCode = async () => {
         const bytes = CryptoJS.AES.decrypt(text, SECRET_KEY);
         return bytes.toString(CryptoJS.enc.Utf8);
     }
-    const apiKey = encrypt("cbc579f0b4bd4144cc9594dedf2c9998")
-    const apiSecret = encrypt("e2662e9fc514d52d2042968c703ca8f75cd2bd40fdfdd811b00e2b388d6373fd")
+    const apiKey = encrypt("64f30ff129a90d928f8150d58838b829")
+    const apiSecret = encrypt("3f78560ecf4913a04ee7d2e03686d173f5257c2d5adf61d8da285089f2cbf8b8")
+    console.log(apiKey, apiSecret)
+    return
     const apiModel = new ApiStoreModel({
         userId: new ObjectId("66042c8dda590dfa1b3a8166"),
         apiKey: apiKey,

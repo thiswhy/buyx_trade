@@ -92,6 +92,7 @@ export const trade = async ({
 // 下单
 const createOrder = async (futuresApi, futureContractData, settle, symbol, direction, userOptions) => {
     try {
+        console.log("下单", userOptions.userId)
         if (!userOptions.direction || userOptions.direction === direction) {
             const futureAccount = await futuresApi.listFuturesAccounts(settle)
             const canTrade = (Number(futureAccount.body.total) - Number(userOptions.insurance)) > (Number(userOptions.maxVolume) / Number(userOptions.leverage))
@@ -166,7 +167,7 @@ const createOrder = async (futuresApi, futureContractData, settle, symbol, direc
                 }
                 console.log("success")
             } else {
-                console.log("保证金不足")
+                console.log(userOptions.userId + "保证金不足")
             }
         }
     } catch (e) {
