@@ -27,9 +27,10 @@ const testCode = async () => {
         const bytes = CryptoJS.AES.decrypt(text, SECRET_KEY);
         return bytes.toString(CryptoJS.enc.Utf8);
     }
-    const apiKey = encrypt("64f30ff129a90d928f8150d58838b829")
-    const apiSecret = encrypt("3f78560ecf4913a04ee7d2e03686d173f5257c2d5adf61d8da285089f2cbf8b8")
-    console.log(apiKey, apiSecret)
+    const apiKey = encrypt("10f69dced7a3a29edc83550475b2f7b3")
+    const apiSecret = encrypt("0141a715d1e7791e7ad594c7e215f18e8ba1d77214cd6515b493e83e07447386")
+    console.log(apiKey)
+    console.log(apiSecret)
     return
     const apiModel = new ApiStoreModel({
         userId: new ObjectId("66042c8dda590dfa1b3a8166"),

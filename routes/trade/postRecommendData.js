@@ -29,8 +29,12 @@ export const postRecommendData = async (req, res) => {
         if (!isEmpty(sortedArray)) {
             const apiKeys = await getUserApiKey()
             for (const apiItem of apiKeys) {
-                const {userId, apiKey, apiSecret} = apiItem
-                const option = await UserTradeOptionsModel.findOne({userId, isActive: true}).lean()
+                const {userId, apiKey, apiSecret, isTestAPI} = apiItem
+                const option = await UserTradeOptionsModel.findOne({
+                    userId,
+                    isActive: true,
+                    isTestOption: isTestAPI
+                }).lean()
                 if (!isEmpty(option)) {
                     await trade({apiKey, apiSecret, userOptions: option, tradeData: sortedArray})
                 }

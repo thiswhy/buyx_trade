@@ -3,6 +3,7 @@ import {formatPrice} from "./formatPrice";
 
 const GateApi = require('gate-api');
 const TRADE_API_URL = process.env.TRADE_API_URL
+const TRADE_TEST_API_URL = process.env.TRADE_TEST_API_URL
 let client = new GateApi.ApiClient();
 
 export const trade = async ({
@@ -13,7 +14,7 @@ export const trade = async ({
                             }) => {
     try {
         client.setApiKeySecret(apiKey, apiSecret);
-        client.basePath = TRADE_API_URL
+        client.basePath = userOptions.isTestOption ? TRADE_TEST_API_URL : TRADE_API_URL
         const futuresApi = new GateApi.FuturesApi(client);
         const settle = "usdt"
         const futureContractData = []
