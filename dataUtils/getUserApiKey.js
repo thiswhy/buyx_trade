@@ -13,11 +13,12 @@ export const getUserApiKey = async () => {
     const apiInfo = await ApiStoreModel.find({isActive: true});
     let apiKeys = [];
     for (const item of apiInfo) {
-        const {apiKey, apiSecret, userId} = item;
+        const {apiKey, apiSecret, userId, isTestAPI} = item;
         apiKeys.push({
             userId,
             apiKey: decrypt(apiKey),
-            apiSecret: decrypt(apiSecret)
+            apiSecret: decrypt(apiSecret),
+            isTestAPI
         })
     }
     return apiKeys

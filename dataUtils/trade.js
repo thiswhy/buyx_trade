@@ -96,7 +96,7 @@ const createOrder = async (futuresApi, futureContractData, settle, symbol, direc
         console.log("下单", userOptions.userId)
         if (!userOptions.direction || userOptions.direction === direction) {
             const futureAccount = await futuresApi.listFuturesAccounts(settle)
-            const canTrade = (Number(futureAccount.body.total) - Number(userOptions.insurance)) > (Number(userOptions.maxVolume) / Number(userOptions.leverage))
+            const canTrade = (Number(futureAccount.body.available) - Number(userOptions.insurance)) > (Number(userOptions.maxVolume) / Number(userOptions.leverage))
             if (canTrade) {
                 const findFutureContract = futureContractData.find(item => item.name === `${symbol}_USDT`)
                 const size = Math.floor(Number(userOptions.maxVolume) / (Number(findFutureContract.quantoMultiplier) * Number(findFutureContract.markPrice)) * Number(userOptions.leverage))
