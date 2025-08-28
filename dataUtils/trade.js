@@ -119,7 +119,7 @@ const createOrder = async (futuresApi, futureContractData, settle, symbol, direc
                         price: 0,
                         tif: "ioc",
                     }, {})
-                    const lossPrice = direction === "buy" ? `${(1 - Number(userOptions.stopLoss)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 + Number(userOptions.stopLoss)) * Number(createFuturesOrder.body.fillPrice)}`
+                    const lossPrice = direction === "buy" ? `${(1 - (Number(userOptions.stopLoss) / 100)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 + (Number(userOptions.stopLoss) / 100)) * Number(createFuturesOrder.body.fillPrice)}`
                     const price = formatPrice(lossPrice, findFutureContract.orderPriceRound)
                     await new Promise(resolve => setTimeout(resolve, 100));
                     // 创建条件单之前需要判断是否已经存在挂单行为
@@ -151,7 +151,7 @@ const createOrder = async (futuresApi, futureContractData, settle, symbol, direc
                     })
                     if (userOptions.takeProfit) {
                         await new Promise(resolve => setTimeout(resolve, 100));
-                        const profitPrice = direction === "buy" ? `${(1 + Number(userOptions.takeProfit)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 - Number(userOptions.takeProfit)) * Number(createFuturesOrder.body.fillPrice)}`
+                        const profitPrice = direction === "buy" ? `${(1 + (Number(userOptions.takeProfit) / 100)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 - (Number(userOptions.takeProfit) / 100)) * Number(createFuturesOrder.body.fillPrice)}`
                         const price = formatPrice(profitPrice, findFutureContract.orderPriceRound)
                         console.log("profitPrice", price)
                         await futuresApi.createPriceTriggeredOrder(settle, {
