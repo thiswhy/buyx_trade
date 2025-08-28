@@ -1,5 +1,13 @@
 import {intersectionWith, isEmpty} from "lodash";
 import {formatPrice} from "./formatPrice";
+import CryptoJS from "crypto-js";
+// 解密函数
+const SECRET_KEY = process.env.SECRET_KEY
+
+const decrypt = (text) => {
+    const bytes = CryptoJS.AES.decrypt(text, SECRET_KEY);
+    return bytes.toString(CryptoJS.enc.Utf8);
+}
 
 const GateApi = require('gate-api');
 const TRADE_API_URL = process.env.TRADE_API_URL
@@ -7,14 +15,13 @@ const TRADE_TEST_API_URL = process.env.TRADE_TEST_API_URL
 let client = new GateApi.ApiClient();
 
 export const trade = async ({
-                                apiKey,
-                                apiSecret,
                                 tradeData,
                                 userOptions,
                             }) => {
     try {
-        client.setApiKeySecret(apiKey, apiSecret);
-        client.basePath = userOptions.isTestOption ? TRADE_TEST_API_URL : TRADE_API_URL
+        const {apiKey, apiSecret, isTestOption} = userOptions
+        client.setApiKeySecret(decrypt(apiKey), decrypt(apiSecret));
+        client.basePath = isTestOption ? TRADE_TEST_API_URL : TRADE_API_URL
         const futuresApi = new GateApi.FuturesApi(client);
         const settle = "usdt"
         const futureContractData = []

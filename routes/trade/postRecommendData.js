@@ -1,4 +1,3 @@
-import {getUserApiKey} from "../../dataUtils/getUserApiKey";
 import {trade} from "../../dataUtils/trade";
 import {UserTradeOptionsModel} from "buydip_scheme/scheme/userTradeOptions";
 import {isEmpty, orderBy} from "lodash";
@@ -27,16 +26,13 @@ export const postRecommendData = async (req, res) => {
         }, {});
         const sortedArray = orderBy(volumeData, obj => symbolOrderMap[obj.symbol]);
         if (!isEmpty(sortedArray)) {
-            const apiKeys = await getUserApiKey()
-            for (const apiItem of apiKeys) {
-                const {userId, apiKey, apiSecret, isTestAPI} = apiItem
-                const option = await UserTradeOptionsModel.findOne({
-                    userId,
-                    isActive: true,
-                    isTestOption: isTestAPI
-                }).lean()
+            const options = await UserTradeOptionsModel.find({
+                isActive: true,
+                isDelete: false,
+            }).lean()
+            for (const option of options) {
                 if (!isEmpty(option)) {
-                    await trade({apiKey, apiSecret, userOptions: option, tradeData: sortedArray})
+                    await trade({ userOptions: option, tradeData: sortedArray})
                 }
             }
         }
