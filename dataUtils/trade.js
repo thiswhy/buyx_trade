@@ -101,7 +101,7 @@ export const trade = async ({
 const createOrder = async (futuresApi, futureContractData, settle, symbol, direction, userOptions) => {
     try {
         console.log("下单", userOptions.userId)
-        if (!userOptions.direction || userOptions.direction === direction) {
+        if ((userOptions.direction === "all") || userOptions.direction === direction) {
             const futureAccount = await futuresApi.listFuturesAccounts(settle)
             const canTrade = (Number(futureAccount.body.available) - Number(userOptions.insurance)) > (Number(userOptions.maxVolume) / Number(userOptions.leverage))
             if (canTrade) {
