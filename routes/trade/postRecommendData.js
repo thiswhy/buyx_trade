@@ -1,9 +1,9 @@
-import {trade} from "../../dataUtils/trade";
 import {UserTradeOptionsModel} from "buydip_scheme/scheme/userTradeOptions";
 import {isEmpty, orderBy} from "lodash";
 import {FundFlowModel, OverallRecModel} from "buydip_scheme";
 import moment from "moment";
 import {formatResponse} from "../../dataUtils/formatResponse";
+import {apiTrade} from "../../dataUtils/apiTrade";
 
 export const postRecommendData = async (req, res) => {
     try {
@@ -24,7 +24,8 @@ export const postRecommendData = async (req, res) => {
             map[obj.symbol] = index;
             return map;
         }, {});
-        const sortedArray = orderBy(volumeData, obj => symbolOrderMap[obj.symbol]);
+       // const sortedArray = orderBy(volumeData, obj => symbolOrderMap[obj.symbol]);
+        const sortedArray = [{symbol:"BTC",direction:"sell"},{symbol:"ETH",direction:"buy"},{symbol:"GT",direction:"buy"}]
         if (!isEmpty(sortedArray)) {
             const options = await UserTradeOptionsModel.find({
                 isActive: true,
@@ -32,7 +33,7 @@ export const postRecommendData = async (req, res) => {
             }).lean()
             for (const option of options) {
                 if (!isEmpty(option)) {
-                    await trade({ userOptions: option, tradeData: sortedArray})
+                    await apiTrade({ userOptions: option, tradeData: sortedArray})
                 }
             }
         }

@@ -1,31 +1,30 @@
 import {intersectionWith, isEmpty} from "lodash";
 import {formatPrice} from "./formatPrice";
-import CryptoJS from "crypto-js";
-// 解密函数
-const SECRET_KEY = process.env.SECRET_KEY
-
-const decrypt = (text) => {
-    const bytes = CryptoJS.AES.decrypt(text, SECRET_KEY);
-    return bytes.toString(CryptoJS.enc.Utf8);
-}
+import {decrypt} from "./utils";
 
 const GateApi = require('gate-api');
 const TRADE_API_URL = process.env.TRADE_API_URL
 const TRADE_TEST_API_URL = process.env.TRADE_TEST_API_URL
 let client = new GateApi.ApiClient();
 
-export const trade = async ({
-                                tradeData,
-                                userOptions,
-                            }) => {
+export const gateTrade = async ({
+                                    tradeData,
+                                    userOptions,
+                                }) => {
     try {
-        const {apiKey, apiSecret, isTestOption} = userOptions
+        const {apiKey, apiSecret, isTestOption, currency} = userOptions
         client.setApiKeySecret(decrypt(apiKey), decrypt(apiSecret));
         client.basePath = isTestOption ? TRADE_TEST_API_URL : TRADE_API_URL
         const futuresApi = new GateApi.FuturesApi(client);
         const settle = "usdt"
         const futureContractData = []
-        for (const tradeItem of tradeData) {
+        let filterTradeDate = null
+        if (!isEmpty(currency)) {
+            filterTradeDate = intersectionWith(tradeData, currency, (a, b) => `${a.symbol}_USDT` === b)
+        } else {
+            filterTradeDate = tradeData
+        }
+        for (const tradeItem of filterTradeDate) {
             try {
                 const futureContract = await futuresApi.getFuturesContract(settle, `${tradeItem.symbol}_USDT`)
                 futureContractData.push(futureContract.body)
@@ -53,7 +52,7 @@ export const trade = async ({
             if (inDualMode) {
                 console.log("持仓方向应该为单向持仓")
             }
-            const intersectionData = intersectionWith(tradeData, futureContractData, (a, b) => `${a.symbol}_USDT` === b.name)
+            const intersectionData = intersectionWith(filterTradeDate, futureContractData, (a, b) => `${a.symbol}_USDT` === b.name)
             for (const item of intersectionData) {
                 try {
                     const {symbol, direction} = item

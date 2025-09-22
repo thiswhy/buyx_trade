@@ -1,4 +1,5 @@
 import {postRecommendData} from "./trade/postRecommendData";
+import {binanceTrade} from "../dataUtils/binanceTrade";
 
 export const testAPI = async (req, res) => {
     try {
