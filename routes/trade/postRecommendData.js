@@ -24,8 +24,8 @@ export const postRecommendData = async (req, res) => {
             map[obj.symbol] = index;
             return map;
         }, {});
-       // const sortedArray = orderBy(volumeData, obj => symbolOrderMap[obj.symbol]);
-        const sortedArray = [{symbol:"BTC",direction:"sell"},{symbol:"ETH",direction:"buy"},{symbol:"GT",direction:"buy"}]
+
+        const sortedArray = orderBy(volumeData, obj => symbolOrderMap[obj.symbol]);
         if (!isEmpty(sortedArray)) {
             const options = await UserTradeOptionsModel.find({
                 isActive: true,
