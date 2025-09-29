@@ -20,7 +20,7 @@ export const gateTrade = async ({
         const futureContractData = []
         let filterTradeDate = null
         if (!isEmpty(currency)) {
-            filterTradeDate = intersectionWith(tradeData, currency, (a, b) => `${a.symbol}_USDT` === b)
+            filterTradeDate = intersectionWith(tradeData, currency, (a, b) => `${a.symbol}` === b)
         } else {
             filterTradeDate = tradeData
         }
