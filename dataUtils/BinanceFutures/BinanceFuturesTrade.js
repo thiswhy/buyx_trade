@@ -142,6 +142,7 @@ class BinanceFuturesTrader {
                 }
             }
 
+            console.log("takeProfitPrice", takeProfitPrice, "stopLossPrice", stopLossPrice)
             const closeSide = direction === 'LONG' ? 'SELL' : 'BUY';
             // 设置止盈单 - 使用正确的订单类型
             if (takeProfitPercent > 0) {
