@@ -1,5 +1,6 @@
+const Decimal =require('decimal.js')
+
 export const formatPrice = (price, step) => {
-    const multiplier = 1/step
-    const p =  `${Math.floor(price * multiplier) / multiplier}`
-    return p
+    const p = new Decimal(price).div(step).floor().times(step).toNumber()
+    return `${p}`
 }
