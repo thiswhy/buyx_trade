@@ -152,7 +152,6 @@ const createOrder = async (futuresApi, futureContractData, settle, symbol, direc
                         await new Promise(resolve => setTimeout(resolve, 100));
                         const profitPrice = direction === "buy" ? `${(1 + (Number(userOptions.takeProfit) / 100)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 - (Number(userOptions.takeProfit) / 100)) * Number(createFuturesOrder.body.fillPrice)}`
                         const price = formatPrice(profitPrice, findFutureContract.orderPriceRound)
-                        console.log("profitPrice", price)
                         await futuresApi.createPriceTriggeredOrder(settle, {
                             initial: {
                                 contract: `${symbol}_USDT`,
