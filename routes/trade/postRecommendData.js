@@ -7,7 +7,7 @@ import {apiTrade} from "../../dataUtils/apiTrade";
 
 export const postRecommendData = async (req, res) => {
     try {
-        const volumeData = await OverallRecModel.find({createdAt: {$gte: moment().startOf('day').toDate()}})
+        const volumeData = await OverallRecModel.find({createdAt: {$gte: moment().startOf('day').toDate()}}).lean()
         const todaySymbol = volumeData.map((item) => {
             return item.symbol
         })
