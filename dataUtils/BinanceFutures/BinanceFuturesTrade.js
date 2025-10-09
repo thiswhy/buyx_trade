@@ -48,8 +48,8 @@ class BinanceFuturesTrader {
             // 计算数量并调整到合适的精度
             let quantity = usdtAmount / currentPrice;
             quantity = Math.floor(quantity / stepSize) * stepSize;
-
-            return quantity.toFixed(symbolInfo.quantityPrecision);
+            quantity = quantity.toFixed(symbolInfo.quantityPrecision);
+            return quantity
         } catch (error) {
             console.error('计算数量失败:', error.message);
             throw error;
@@ -145,7 +145,7 @@ class BinanceFuturesTrader {
             console.log("takeProfitPrice", takeProfitPrice, "stopLossPrice", stopLossPrice)
             const closeSide = direction === 'LONG' ? 'SELL' : 'BUY';
             // 设置止盈单 - 使用正确的订单类型
-            if (takeProfitPercent > 0) {
+            if (takeProfitPercent > 0 && takeProfitPrice !== '0') {
                 results.takeProfit = await this.client.placeOrder(symbol, {
                     side: closeSide,
                     type: 'TAKE_PROFIT_MARKET', // 使用市价止盈
@@ -158,7 +158,7 @@ class BinanceFuturesTrader {
             }
 
             // 设置止损单 - 使用正确的订单类型
-            if (stopLossPercent > 0) {
+            if (stopLossPercent > 0 && stopLossPrice !== '0') {
                 results.stopLoss = await this.client.placeOrder(symbol, {
                     side: closeSide,
                     type: 'STOP_MARKET', // 使用市价止损
@@ -176,19 +176,19 @@ class BinanceFuturesTrader {
         }
     }
 
-    async  setupDualPositionMode() {
+    async setupDualPositionMode() {
         try {
             // 获取当前持仓模式
             const currentMode = await this.client.getPositionMode();
             console.log('当前持仓模式:', currentMode);
-
-            // 设置为双向持仓模式
-            const result = await this.client.setPositionMode(true);
-            console.log('设置双向持仓模式成功:', result);
-
-            // 验证设置
-            const newMode = await this.client.getPositionMode();
-            console.log('新的持仓模式:', newMode);
+            if (currentMode.dualSidePosition) {
+                // 设置为单向持仓模式
+                const result = await this.client.setPositionMode(false);
+                console.log('设置单向持仓模式成功:', result);
+                // 验证设置
+                const newMode = await this.client.getPositionMode();
+                console.log('新的持仓模式:', newMode);
+            }
         } catch (error) {
             console.error('设置持仓模式失败:', error);
         }
@@ -228,7 +228,9 @@ class BinanceFuturesTrader {
             const currentPrice = await this.client.getCurrentPrice(symbol);
             const quantity = await this.calculateQuantity(symbolInfo, usdtAmount, currentPrice);
             console.log(`当前价格: ${currentPrice}, 计算数量: ${quantity}`);
-
+            if (quantity == '0') {
+                return
+            }
             // 4. 检查当前持仓并平仓（如果需要）
             const currentPosition = await this.getCurrentPosition(symbol);
             if (currentPosition) {
