@@ -176,6 +176,24 @@ class BinanceFuturesTrader {
         }
     }
 
+    async  setupDualPositionMode() {
+        try {
+            // 获取当前持仓模式
+            const currentMode = await this.client.getPositionMode();
+            console.log('当前持仓模式:', currentMode);
+
+            // 设置为双向持仓模式
+            const result = await this.client.setPositionMode(true);
+            console.log('设置双向持仓模式成功:', result);
+
+            // 验证设置
+            const newMode = await this.client.getPositionMode();
+            console.log('新的持仓模式:', newMode);
+        } catch (error) {
+            console.error('设置持仓模式失败:', error);
+        }
+    }
+
     /**
      * 执行交易
      */
@@ -198,6 +216,9 @@ class BinanceFuturesTrader {
             if (!await this.checkMargin(symbol, usdtAmount, minMargin)) {
                 throw new Error('保证金检查失败');
             }
+
+            // 设置双向持仓
+            await this.setupDualPositionMode()
 
             // 2. 设置杠杆
             await this.client.setLeverage(symbol, leverage);
