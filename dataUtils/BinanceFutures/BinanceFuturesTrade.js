@@ -208,7 +208,6 @@ class BinanceFuturesTrader {
             stopLossPercent,
             symbolInfo,
         } = params;
-
         try {
             console.log(`开始执行交易: ${symbol}, 方向: ${direction}, 金额: ${usdtAmount} USDT`);
 
@@ -217,7 +216,7 @@ class BinanceFuturesTrader {
                 throw new Error('保证金检查失败');
             }
 
-            // 设置双向持仓
+            // 设置单向持仓
             await this.setupDualPositionMode()
 
             // 2. 设置杠杆
@@ -251,21 +250,22 @@ class BinanceFuturesTrader {
             let filledPrice = currentPrice;
             let filledQuantity = quantity;
 
-            if (orderResult.orderId) {
-                // 等待订单完全成交
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                // 获取订单详情
-                const orderInfo = await this.client.getOrder(symbol, orderResult.orderId);
-                filledPrice = parseFloat(orderInfo.avgPrice) || currentPrice;
-
-                // 获取实际成交数量
-                if (orderInfo.executedQty) {
-                    filledQuantity = parseFloat(orderInfo.executedQty);
-                }
-
-                console.log(`订单详情: 均价=${filledPrice}, 数量=${filledQuantity}, 状态=${orderInfo.status}`);
-            }
+            // if (orderResult.orderId) {
+            //     // 等待订单完全成交
+            //     await new Promise(resolve => setTimeout(resolve, 2000));
+            //
+            //     // 获取订单详情
+            //     const orderInfo = await this.client.getOrder(symbol, orderResult.orderId);
+            //     console.log('订单详情:', orderInfo);
+            //     filledPrice = parseFloat(orderInfo.avgPrice) || currentPrice;
+            //
+            //     // 获取实际成交数量
+            //     if (orderInfo.executedQty) {
+            //         filledQuantity = parseFloat(orderInfo.executedQty);
+            //     }
+            //
+            //     console.log(`订单详情: 均价=${filledPrice}, 数量=${filledQuantity}, 状态=${orderInfo.status}`);
+            // }
 
             // 7. 设置止盈止损 - 使用实际成交价格和数量
             const tpSlResults = await this.setTakeProfitAndStopLoss(

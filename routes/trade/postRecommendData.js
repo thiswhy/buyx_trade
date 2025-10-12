@@ -33,6 +33,7 @@ export const postRecommendData = async (req, res) => {
             }).lean()
             for (const option of options) {
                 if (!isEmpty(option)) {
+                    console.log("sortedArray",sortedArray,option)
                     await apiTrade({ userOptions: option, tradeData: sortedArray})
                 }
             }
