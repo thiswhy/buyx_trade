@@ -1,6 +1,7 @@
 import {intersectionWith, isEmpty} from "lodash";
 import {formatPrice} from "./formatPrice";
 import {decrypt} from "./utils";
+import {saveUserBalance} from "./saveUserBalance";
 
 const GateApi = require('gate-api');
 const TRADE_API_URL = process.env.TRADE_API_URL
@@ -35,6 +36,7 @@ export const gateTrade = async ({
         }
         if (userOptions.isActive) {
             const futureAccount = await futuresApi.listFuturesAccounts(settle)
+            saveUserBalance(userOptions.userId, futureAccount.body)
             // 获取用户的账户信息，查看持仓模式，如果是双向持仓，则需要改为单向持仓
             // 如果持仓模式修改不成功则拒绝下单操作
             let inDualMode = futureAccount.body.inDualMode

@@ -7,6 +7,15 @@ class BinanceFuturesTrader {
         this.client = new BinanceFuturesClient(apiKey, apiSecret, isTestnet);
     }
 
+    async checkUserAccount() {
+        try {
+            return await this.client.getAccountInfo();
+        } catch (e) {
+            console.error('获取Binance余额失败:', e.message);
+            throw e;
+        }
+    }
+
     /**
      * 检查保证金是否充足
      */
