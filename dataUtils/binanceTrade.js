@@ -8,6 +8,14 @@ export const binanceTrade = async ({tradeData, userOptions}) => {
         // 首先获取到当前可支持的币种信息
         const {apiKey, apiSecret, isTestOption, currency, isActive} = userOptions
         const trader = new BinanceFuturesTrade(decrypt(apiKey), decrypt(apiSecret), isTestOption);
+        const accountInfo = await trader.checkUserAccount();
+        const {availableBalance, totalUnrealizedProfit, totalWalletBalance} = accountInfo
+        const accountFunds = {
+            total: totalWalletBalance,
+            unrealisedPnl: totalUnrealizedProfit,
+            available: availableBalance
+        }
+        saveUserBalance(userOptions.userId, accountFunds)
         // 获取所有币种信息
         let futureContractData = []
         const symbols = await trader.getSymbolInfo()
@@ -28,14 +36,6 @@ export const binanceTrade = async ({tradeData, userOptions}) => {
         }
         if (isActive) {
             const {direction, insurance, maxVolume, leverage, stopLoss, takeProfit} = userOptions
-            const accountInfo = await trader.checkUserAccount();
-            const {availableBalance, totalUnrealizedProfit, totalWalletBalance} = accountInfo
-            const accountFunds = {
-                total: totalWalletBalance,
-                unrealisedPnl: totalUnrealizedProfit,
-                available: availableBalance
-            }
-            saveUserBalance(userOptions.userId, accountFunds)
             for (const item of futureContractData) {
                 if (direction === 'all' || direction === item.direction) {
                     // 执行交易
