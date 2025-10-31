@@ -20,8 +20,6 @@ export const gateTrade = async ({
         const settle = "usdt"
         const futureContractData = []
         let filterTradeDate = null
-        const futureAccount = await futuresApi.listFuturesAccounts(settle)
-        saveUserBalance(userOptions.userId, futureAccount.body)
         if (!isEmpty(currency)) {
             filterTradeDate = intersectionWith(tradeData, currency, (a, b) => `${a.symbol}_USDT` === b)
         } else {
@@ -37,6 +35,8 @@ export const gateTrade = async ({
             }
         }
         if (userOptions.isActive) {
+            const futureAccount = await futuresApi.listFuturesAccounts(settle)
+            await saveUserBalance(userOptions.userId, futureAccount.body)
             // 获取用户的账户信息，查看持仓模式，如果是双向持仓，则需要改为单向持仓
             // 如果持仓模式修改不成功则拒绝下单操作
             let inDualMode = futureAccount.body.inDualMode
