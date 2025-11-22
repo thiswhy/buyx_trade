@@ -224,29 +224,39 @@ class BinanceFuturesTrader {
             if (!await this.checkMargin(symbol, usdtAmount, minMargin)) {
                 throw new Error('保证金检查失败');
             }
+            await new Promise(resolve => setTimeout(resolve, 50));
 
             // 设置单向持仓
             await this.setupDualPositionMode()
+            await new Promise(resolve => setTimeout(resolve, 50));
 
             // 2. 设置杠杆
             await this.client.setLeverage(symbol, leverage);
             console.log(`设置杠杆: ${leverage}x`);
+            await new Promise(resolve => setTimeout(resolve, 50));
 
             // 3. 获取当前价格和计算数量
             const currentPrice = await this.client.getCurrentPrice(symbol);
+            await new Promise(resolve => setTimeout(resolve, 50));
+
             const quantity = await this.calculateQuantity(symbolInfo, usdtAmount, currentPrice);
+            await new Promise(resolve => setTimeout(resolve, 50));
+
             console.log(`当前价格: ${currentPrice}, 计算数量: ${quantity}`);
             if (quantity == '0') {
                 return
             }
             // 4. 检查当前持仓并平仓（如果需要）
             const currentPosition = await this.getCurrentPosition(symbol);
+            await new Promise(resolve => setTimeout(resolve, 50));
+
             if (currentPosition) {
                 const currentDirection = currentPosition.positionSide;
                 if ((currentDirection === 'LONG' && direction === 'SHORT') ||
                     (currentDirection === 'SHORT' && direction === 'LONG')) {
                     console.log(`发现反向持仓，先平仓: ${currentDirection}`);
                     await this.closePosition(symbol);
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
             }
 
@@ -254,6 +264,7 @@ class BinanceFuturesTrader {
             const orderSide = direction === 'LONG' ? 'BUY' : 'SELL';
             const orderResult = await this.client.placeMarketOrder(symbol, orderSide, quantity);
             console.log('下单成功:', orderResult);
+            await new Promise(resolve => setTimeout(resolve, 50));
 
             // 6. 获取成交均价和实际数量
             let filledPrice = currentPrice;
@@ -287,6 +298,7 @@ class BinanceFuturesTrader {
             );
 
             console.log('交易完成，止盈止损已设置');
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             return {
                 success: true,

@@ -133,44 +133,48 @@ const createOrder = async (futuresApi, futureContractData, settle, symbol, direc
                         await new Promise(resolve => setTimeout(resolve, 100));
                     }
                     await new Promise(resolve => setTimeout(resolve, 100));
-                    await futuresApi.createPriceTriggeredOrder(settle, {
-                        initial: {
-                            contract: `${symbol}_USDT`,
-                            size: 0,// 平仓
-                            price: "0",// 止损
-                            reduceOnly: true,
-                            close: true,
-                            tif: "ioc",
-                        },
-                        trigger: {
-                            strategyType: 0,
-                            priceType: 0,
-                            price: price,
-                            rule: direction === "buy" ? 2 : 1
-                        },
-                        orderType: direction === "buy" ? "close-long-position" : "close-short-position",
-                    })
-                    if (userOptions.takeProfit) {
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        const profitPrice = direction === "buy" ? `${(1 + (Number(userOptions.takeProfit) / 100)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 - (Number(userOptions.takeProfit) / 100)) * Number(createFuturesOrder.body.fillPrice)}`
-                        const price = formatPrice(profitPrice, findFutureContract.orderPriceRound)
+                    if (Number(price) > 0) {
                         await futuresApi.createPriceTriggeredOrder(settle, {
                             initial: {
                                 contract: `${symbol}_USDT`,
                                 size: 0,// 平仓
-                                price: "0",// 止盈
+                                price: "0",// 止损
                                 reduceOnly: true,
-                                tif: "ioc",
                                 close: true,
+                                tif: "ioc",
                             },
                             trigger: {
                                 strategyType: 0,
                                 priceType: 0,
                                 price: price,
-                                rule: direction === "buy" ? 1 : 2
+                                rule: direction === "buy" ? 2 : 1
                             },
                             orderType: direction === "buy" ? "close-long-position" : "close-short-position",
                         })
+                    }
+                    if (userOptions.takeProfit) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        const profitPrice = direction === "buy" ? `${(1 + (Number(userOptions.takeProfit) / 100)) * Number(createFuturesOrder.body.fillPrice)}` : `${(1 - (Number(userOptions.takeProfit) / 100)) * Number(createFuturesOrder.body.fillPrice)}`
+                        const price = formatPrice(profitPrice, findFutureContract.orderPriceRound)
+                        if (Number(price) > 0) {
+                            await futuresApi.createPriceTriggeredOrder(settle, {
+                                initial: {
+                                    contract: `${symbol}_USDT`,
+                                    size: 0,// 平仓
+                                    price: "0",// 止盈
+                                    reduceOnly: true,
+                                    tif: "ioc",
+                                    close: true,
+                                },
+                                trigger: {
+                                    strategyType: 0,
+                                    priceType: 0,
+                                    price: price,
+                                    rule: direction === "buy" ? 1 : 2
+                                },
+                                orderType: direction === "buy" ? "close-long-position" : "close-short-position",
+                            })
+                        }
                     }
                 }
                 console.log("success")
