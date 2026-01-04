@@ -7,7 +7,13 @@ import {apiTrade} from "../../dataUtils/apiTrade";
 
 export const postRecommendData = async (req, res) => {
     try {
-        const volumeData = await OverallRecModel.find({createdAt: {$gte: moment().startOf('day').toDate()}}).lean()
+        const {hour} = req.body
+        const volumeData = await OverallRecModel.find({
+            dateTime: hour,
+            createdAt: {$gte: moment().startOf('day').toDate()}
+        }).lean()
+        console.log("hour",volumeData)
+
         const todaySymbol = volumeData.map((item) => {
             return item.symbol
         })
@@ -33,7 +39,7 @@ export const postRecommendData = async (req, res) => {
             }).lean()
             for (const option of options) {
                 if (!isEmpty(option)) {
-                    await apiTrade({ userOptions: option, tradeData: sortedArray})
+                    await apiTrade({userOptions: option, tradeData: sortedArray})
                 }
             }
         }
