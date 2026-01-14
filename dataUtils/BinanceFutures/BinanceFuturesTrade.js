@@ -154,27 +154,25 @@ class BinanceFuturesTrader {
             console.log("takeProfitPrice", takeProfitPrice, "stopLossPrice", stopLossPrice)
             const closeSide = direction === 'LONG' ? 'SELL' : 'BUY';
             // 设置止盈单 - 使用正确的订单类型
-            if (takeProfitPercent > 0 && takeProfitPrice !== '0') {
-                results.takeProfit = await this.client.placeOrder(symbol, {
+            if (takeProfitPercent > 0 && Number(takeProfitPrice) > 0) {
+                results.takeProfit = await this.client.placeAlgoOrder(symbol, {
                     side: closeSide,
                     type: 'TAKE_PROFIT_MARKET', // 使用市价止盈
                     quantity: quantity,
                     stopPrice: Number(takeProfitPrice),
                     closePosition: 'true', // 平仓
-                    timeInForce: 'GTC'
                 });
                 console.log(`止盈单设置: ${takeProfitPrice}`);
             }
 
             // 设置止损单 - 使用正确的订单类型
-            if (stopLossPercent > 0 && stopLossPrice !== '0') {
-                results.stopLoss = await this.client.placeOrder(symbol, {
+            if (stopLossPercent > 0 && Number(stopLossPrice) > 0) {
+                results.stopLoss = await this.client.placeAlgoOrder(symbol, {
                     side: closeSide,
                     type: 'STOP_MARKET', // 使用市价止损
                     quantity: quantity,
                     stopPrice: Number(stopLossPrice),
                     closePosition: 'true', // 平仓
-                    timeInForce: 'GTC'
                 });
                 console.log(`止损单设置: ${stopLossPrice}`);
             }
