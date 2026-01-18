@@ -169,7 +169,7 @@ class BinanceFuturesClient {
             delete params.quantity;
         }
 
-        return this._sendRequest('POST', '/fapi/v1/algo/order', params, true);
+        return this._sendRequest('POST', '/fapi/v1/algoOrder', params, true);
     }
 
     // 市价单
